@@ -1,0 +1,6 @@
+{
+	"type": "module",
+	"scripts": {
+		"testing": "node --test test/app.test.js"
+	}
+}
