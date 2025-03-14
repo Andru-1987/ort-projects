@@ -1,61 +1,82 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
+import { getWinningCombinations } from "@/utils/combinations.js";
 
-// Board state
-const board = ref(Array(9).fill(null));
+// Reactive size
+const size = ref(3);
+
+// Reactive state
+const board = ref([]);
 const currentPlayer = ref("X");
 const winner = ref(null);
 
-// Winning combinations
-const winningCombinations = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-    [0, 4, 8], [2, 4, 6]             // Diagonals
-];
+// Winning combinations as a computed property
+const winningCombinations = computed(() => {
+    const combinations = getWinningCombinations(size.value);
+    return Array.isArray(combinations) ? combinations : []; // Ensure it's iterable
+});
+
+const validateSize = () => {
+    size.value = Math.min(10, Math.max(3, Number(size.value) || 3));
+};
+
+// Reset game
+const resetGame = () => {
+    board.value = Array(size.value * size.value).fill(null);
+    currentPlayer.value = "X";
+    winner.value = null;
+};
 
 // Check for winner
 const checkWinner = () => {
-    for (const [a, b, c] of winningCombinations) {
-        if (board.value[a] && board.value[a] === board.value[b] && board.value[a] === board.value[c]) {
-            winner.value = board.value[a];
+    for (const combination of winningCombinations.value) {
+        const [first, ...rest] = combination;
+
+        if (board.value[first] && rest.every((index) => board.value[index] === board.value[first])) {
+            winner.value = board.value[first];
             return;
         }
     }
+
     if (!board.value.includes(null)) {
         winner.value = "Draw";
     }
 };
 
-// Handle a player's move
 const makeMove = (index) => {
     if (!board.value[index] && !winner.value) {
         board.value[index] = currentPlayer.value;
-        checkWinner();
+        checkWinner(); // Check winner BEFORE switching players
         if (!winner.value) {
             currentPlayer.value = currentPlayer.value === "X" ? "O" : "X";
         }
     }
 };
 
-// Reset the game
-const resetGame = () => {
-    board.value = Array(9).fill(null);
-    currentPlayer.value = "X";
-    winner.value = null;
-};
-
 // Computed property for status message
 const statusMessage = computed(() => {
-    return winner.value ? (winner.value === "Draw" ? "It's a Draw!" : `Winner: ${winner.value}`) : `Next player: ${currentPlayer.value}`;
+    return winner.value
+        ? winner.value === "Draw"
+            ? "It's a Draw!"
+            : `Winner: ${winner.value}`
+        : `Next player: ${currentPlayer.value}`;
 });
+
+// Watch for size changes, validate input, and reset the board
+watch(size, () => {
+    validateSize();
+    resetGame();
+}, { immediate: true });
 </script>
 
 <template>
     <div class="game">
-        <h1>Tic-Tac-Toe</h1>
+        <label for="size">{{ size }}</label><br>
+        <input id="size" type="range" v-model="size" min="3" max="10" @input="validateSize">
+        <h1>Tic-Tac-Toe ({{ size }}x{{ size }})</h1>
         <p class="status">{{ statusMessage }}</p>
 
-        <div class="board">
+        <div class="board" :style="{ gridTemplateColumns: `repeat(${size}, 80px)` }">
             <button v-for="(cell, index) in board" :key="index" class="cell" @click="makeMove(index)"
                 :class="{ 'x': cell === 'X', 'o': cell === 'O' }">
                 {{ cell }}
@@ -79,7 +100,6 @@ const statusMessage = computed(() => {
 
 .board {
     display: grid;
-    grid-template-columns: repeat(3, 80px);
     gap: 5px;
     justify-content: center;
     margin: 20px auto;
