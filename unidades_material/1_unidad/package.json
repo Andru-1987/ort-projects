@@ -1,7 +1,0 @@
-{
-	"type": "module",
-	"scripts": {
-		"testing": "node --test test/app.test.js",
-		"file-reading": "node src/file.manager.js"
-	}
-}
