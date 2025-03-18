@@ -233,5 +233,3 @@ const mostrarInfo = ({ nombre, edad }) =>
 const ciudad = ["Madrid", "España", 3000000];
 const [nombre, pais, poblacion] = ciudad;
 ```
-
-Espero que estos ejercicios te sean de utilidad.
